@@ -8,7 +8,7 @@ const config = {
 	},
 
 	avatar: "/img/01.png", // 头像
-	welcometitle: "Hi, I'm Xu Guochen", // 标题
+	welcometitle: "Hello,欢迎来到我的网址导航站", // 标题
 
 	// 颜色配置
 	color: {
@@ -22,7 +22,7 @@ const config = {
 	blur: 5, // 毛玻璃模糊效果
 
 	// 我的标签
-	tags: ['乐观开朗', '有些社恐', '随和亲切', '冷静沉着',  '善解人意'],
+	tags: ['乐观开朗', '有些社恐', '随和亲切',  '善解人意'],
 
 	// 默认背景壁纸
 	background: {
