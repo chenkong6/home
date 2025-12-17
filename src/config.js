@@ -8,7 +8,7 @@ const config = {
 	},
 
 	avatar: "/img/01.png", // 头像
-	welcometitle: "Hello,欢迎来到我的网址导航站", // 标题
+	welcometitle: "Hello,Welcome to XUGUOCHEN’s website navigation portal.", // 标题
 
 	// 颜色配置
 	color: {
@@ -138,14 +138,14 @@ const config = {
 
 	//项目卡片 其中 字段"show"控制初始卡片的text是否展开
 	projectcards: [
-		{ go: "🚀 前往", img: "/img/02.png", title: "个人博客", subtitle: "1,000 miles of wonder", text: "点击此处访问我的博客.", url: "https://xuguochenblog.dpdns.org/", show: false },
-		{ go: "🗂️ 前往", img: "/img/03.png", title: "在线音乐平台", subtitle: "2,000 miles of wonder", text: "If you see this line, I've managed to get your attention.", url: "http://xuguochen003.dpdns.org/", show: false },
-		{ go: "📝 前往", img: "/img/04.png", title: "hive AI聊天", subtitle: "3,000 miles of wonder", text: "If you see this line, I've managed to get your attention.", url: "http://xuguochen.dpdns.org/", show: false },
-		{ go: "👍 前往", img: "/img/05.png", title: "open webui AI聊天", subtitle: "4,000 miles of wonder", text: "If you see this line, I've managed to get your attention.", url: "https://webui.xuguochen.dpdns.org/", show: false },
-		{ go: "🗃 前往", img: "/img/06.png", title: "影视站Libre TV", subtitle: "5,000 miles of wonder", text: "If you see this line, I've managed to get your attention.", url: "http://xuguochen001.dpdns.org/", show: false },
-		{ go: "🎨 前往", img: "/img/07.png", title: "影视站Moon TV", subtitle: "6,000 miles of wonder", text: "If you see this line, I've managed to get your attention.", url: "http://xuguochen002.dpdns.org/", show: false },
-		{ go: "💍 前往", img: "/img/08.png", title: "待补充", subtitle: "7,000 miles of wonder", text: "If you see this line, I've managed to get your attention.", url: "https://xuguochenblog.dpdns.org/", show: false },
-		{ go: "🔍 前往", img: "/img/09.png", title: "待补充", subtitle: "8,000 miles of wonder", text: "If you see this line, I've managed to get your attention.", url: "https://xuguochenblog.dpdns.org/", show: false },
+		{ go: "🚀 前往", img: "/img/02.png", title: "个人博客", subtitle: "站点1", text: "点击此处访问我的博客.", url: "https://xuguochenblog.dpdns.org/", show: false },
+		{ go: "🗂️ 前往", img: "/img/03.png", title: "在线音乐平台", subtitle: "站点2", text: "Live Music.", url: "http://xuguochen003.dpdns.org/", show: false },
+		{ go: "📝 前往", img: "/img/04.png", title: "hive AI聊天", subtitle: "站点3", text: "AI Chat, I've managed to get your attention.", url: "http://xuguochen.dpdns.org/", show: false },
+		{ go: "👍 前往", img: "/img/05.png", title: "open webui AI聊天", subtitle: "已下线", text: "已下线", url: "https://webui.xuguochen.dpdns.org/", show: false },
+		{ go: "🗃 前往", img: "/img/06.png", title: "影视站Libre TV", subtitle: "站点5", text: "影视1", url: "http://xuguochen001.dpdns.org/", show: false },
+		{ go: "🎨 前往", img: "/img/07.png", title: "影视站Moon TV", subtitle: "站点6", text: "影视2", url: "http://xuguochen002.dpdns.org/", show: false },
+		{ go: "💍 前往", img: "/img/08.png", title: "待补充", subtitle: "站点7", text: "待补充", url: "https://xuguochenblog.dpdns.org/", show: false },
+		{ go: "🔍 前往", img: "/img/09.png", title: "待补充", subtitle: "站点8", text: "待补充", url: "https://xuguochenblog.dpdns.org/", show: false },
 	],
 
 	statement: ["备案号：ANMIAOYI--安妙依", "Copyright © 2025 ANMIAOYI"],
