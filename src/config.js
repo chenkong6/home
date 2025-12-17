@@ -8,7 +8,7 @@ const config = {
 	},
 
 	avatar: "/img/01.png", // 头像
-	welcometitle: "Xu Guochen’s website navigation portal", // 标题
+	welcometitle: "hello,welcome to my website navigation portal", // 标题
 
 	// 颜色配置
 	color: {
@@ -148,7 +148,7 @@ const config = {
 		{ go: "🔍 前往", img: "/img/09.png", title: "待补充", subtitle: "站点8", text: "待补充", url: "https://xuguochenblog.dpdns.org/", show: false },
 	],
 
-	statement: ["备案号：ANMIAOYI--安妙依", "Copyright © 2025 ANMIAOYI"],
+	statement: ["备案号：XUGUOCHEN--许国臣", "Copyright © 2026 XUGUOCHEN"],
 }
 
 export default config
