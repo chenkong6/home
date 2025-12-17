@@ -8,7 +8,7 @@ const config = {
 	},
 
 	avatar: "/img/01.png", // 头像
-	welcometitle: "hello,welcome to my website navigation portal", // 标题
+	welcometitle: "xuguochen's website navigation", // 标题
 
 	// 颜色配置
 	color: {
