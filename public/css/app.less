@@ -112,8 +112,33 @@
             }
         }
         &-socialIconsContainer{
+            .social-icon-item {
+                position: relative;
+                display: inline-flex;
+            }
             .leleo-social-bticon:hover{
                 transform: scale(1.2);
+            }
+            .qq-hover-image {
+                position: absolute;
+                bottom: calc(100% + 10px);
+                left: 50%;
+                transform: translateX(-50%);
+                width: 120px;
+                height: 120px;
+                border-radius: 8px;
+                overflow: hidden;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+                pointer-events: none;
+                z-index: 8;
+            }
+            .qq-hover-fade-enter-active,
+            .qq-hover-fade-leave-active {
+                transition: opacity 0.2s ease;
+            }
+            .qq-hover-fade-enter-from,
+            .qq-hover-fade-leave-to {
+                opacity: 0;
             }
         }
     }

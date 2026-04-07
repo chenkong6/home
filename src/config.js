@@ -4,7 +4,7 @@ const config = {
 		title: '辰空的个人主页🎉',
 		description: '欢迎来到辰空的奇妙世界！',
 		keywords: '辰空,个人主页,个人网站',
-		icon: '/favicon.ico'   //网页图标，支持外链
+		icon: '/img/x.ico'   //网页图标，支持外链
 	},
 
 	avatar: "/img/avatar.jpg", // 头像
@@ -53,9 +53,9 @@ const config = {
 
 	//社交按钮
 	socialPlatformIcons: [
-		{ icon: "mdi-github", link: "https://www.github.com/leleo886" },
-		{ icon: "mdi-email", link: "mailto:leleo886@foxmail.com" },
-		{ icon: "mdi-qqchat", link: "https://im.qq.com/" },
+		{ icon: "mdi-github", link: "https://github.com/chenkong6" },
+		{ icon: "mdi-email", link: "mailto:chenkong9@qq.com" },
+		{ icon: "mdi-qqchat", link: "https://im.qq.com/", hoverImage: "/img/qq.jpg" },
 		{ icon: "mdi-wechat", link: "https://wx.qq.com/" },
 		{ icon: "mdi-youtube", link: "https://www.youtube.com" },
 		{ icon: "mdi-facebook", link: "https://www.facebook.com" }
@@ -80,7 +80,7 @@ const config = {
 	musicPlayer: {
 		server: 'netease',  //服务提供商 --网易云音乐
 		type: 'playlist',   //歌单类型
-		id: '2028178887'  //歌单id ---> music.163.com/#/playlist?id=2028178887
+		id: '2629584905'  //歌单id ---> https://music.163.com/#/playlist?id=2629584905
 	},
 
 	//壁纸数据 -----可以将壁纸文件上传到图床获取网络直链。若想调用api，请前往脚本自行修改逻辑

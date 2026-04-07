@@ -76,13 +76,23 @@
 
                 <v-container class="leleo-left-socialIconsContainer">
                     <v-row align="center" justify="center">
-                    <v-col class="pa-1" cols="auto" v-for="item in socialPlatformIcons">
-                        <v-btn :size="xs?25:33" variant="tonal" color="var(--leleo-vcard-color)"
-                        class="ma-1 leleo-social-bticon"
-                        icon
-                        :href="item.link" target="_blank"
-                        >
-                    <v-icon :icon=item.icon :size="xs?20:25" class="social-bticon-icon"></v-icon></v-btn>
+                    <v-col class="pa-1" cols="auto" v-for="item in socialPlatformIcons" :key="item.icon">
+                        <div class="social-icon-item" @mouseenter="handleSocialMouseEnter(item)" @mouseleave="handleSocialMouseLeave">
+                          <v-btn :size="xs?25:33" variant="tonal" color="var(--leleo-vcard-color)"
+                          class="ma-1 leleo-social-bticon"
+                          icon
+                          :href="item.link" target="_blank"
+                          >
+                      <v-icon :icon=item.icon :size="xs?20:25" class="social-bticon-icon"></v-icon></v-btn>
+                          <transition name="qq-hover-fade">
+                            <div
+                              v-if="item.icon === 'mdi-qqchat' && hoveredSocialIcon === item.icon && item.hoverImage"
+                              class="qq-hover-image"
+                            >
+                              <v-img :src="item.hoverImage" cover></v-img>
+                            </div>
+                          </transition>
+                        </div>
                     </v-col>
                     </v-row>
 

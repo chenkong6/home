@@ -37,6 +37,7 @@ export default {
       musicinfoLoading:false,
       lyrics:{},
       socialPlatformIcons: null,
+      hoveredSocialIcon: null,
       isExpanded: false,
       stackicons:[
         {icon:"mdi-vuejs",color:"green", model: false,tip: 'vue'},
@@ -334,6 +335,14 @@ export default {
     },
     collapseSwitch() {
       this.isExpanded = false;
+    },
+    handleSocialMouseEnter(item) {
+      if (item && item.hoverImage) {
+        this.hoveredSocialIcon = item.icon;
+      }
+    },
+    handleSocialMouseLeave() {
+      this.hoveredSocialIcon = null;
     },
   }
 };
