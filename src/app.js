@@ -214,13 +214,16 @@ export default {
       this.activePage = page;
       this.dialog1 = false;
       this.dialog2 = false;
-      const nextPath = page === 'blog' ? '/blog' : '/';
-      history.replaceState(null, '', `${nextPath}${window.location.search}`);
+      if (page === 'blog') {
+        history.replaceState(null, '', `${window.location.pathname}${window.location.search}#/blog`);
+      } else {
+        history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+      }
     },
 
     syncActivePageFromLocation() {
       const isBlogPath = /^\/blog(\/|$)/.test(window.location.pathname);
-      const isBlogHash = window.location.hash === '#blog';
+      const isBlogHash = /^#\/?blog(\/|$)?/.test(window.location.hash) || window.location.hash === '#blog';
       this.activePage = isBlogPath || isBlogHash ? 'blog' : 'home';
       this.dialog1 = false;
       this.dialog2 = false;

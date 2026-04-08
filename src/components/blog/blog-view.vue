@@ -412,15 +412,18 @@ export default {
     },
     getPostPath(slug = '') {
       if (!slug) {
-        return '/blog'
+        return '/#/blog'
       }
-      return `/blog/${encodeURIComponent(slug)}`
+      return `/#/blog/${encodeURIComponent(slug)}`
     },
     buildPostUrl(slug = '') {
       return `${window.location.origin}${this.getPostPath(slug)}`
     },
     async syncRouteFromLocation() {
-      const match = window.location.pathname.match(/^\/blog\/([^/]+)$/)
+      const pathMatch = window.location.pathname.match(/^\/blog\/([^/]+)\/?$/)
+      const hashMatch = window.location.hash.match(/^#\/?blog\/([^/]+)\/?$/)
+      const match = pathMatch || hashMatch
+
       if (!match) {
         this.currentSlug = ''
         this.currentPost = null
@@ -503,8 +506,8 @@ export default {
       }
     },
     goToPost(slug) {
-      const path = this.getPostPath(slug)
-      history.pushState(null, '', path)
+      const hashPath = `#/blog/${encodeURIComponent(slug)}`
+      history.pushState(null, '', `${window.location.pathname}${window.location.search}${hashPath}`)
       this.syncRouteFromLocation()
     },
     openPostInNewTab(slug) {
@@ -525,7 +528,7 @@ export default {
       })
     },
     goToList() {
-      history.pushState(null, '', '/blog')
+      history.pushState(null, '', `${window.location.pathname}${window.location.search}#/blog`)
       this.currentSlug = ''
       this.currentPost = null
     },
