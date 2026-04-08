@@ -42,6 +42,7 @@ export default {
       isExpanded: false,
       activePage: 'home',
       hashChangeHandler: null,
+      popStateHandler: null,
       stackicons:[
         {icon:"mdi-vuejs",color:"green", model: false,tip: 'vue'},
         {icon:"mdi-language-javascript",color:"#CAD300", model: false,tip: 'javascript'},
@@ -78,9 +79,11 @@ export default {
     if(import.meta.env.VITE_CONFIG){
       this.configdata = JSON.parse(import.meta.env.VITE_CONFIG);
     }
-    this.syncActivePageFromHash();
-    this.hashChangeHandler = () => this.syncActivePageFromHash();
+    this.syncActivePageFromLocation();
+    this.hashChangeHandler = () => this.syncActivePageFromLocation();
+    this.popStateHandler = () => this.syncActivePageFromLocation();
     window.addEventListener('hashchange', this.hashChangeHandler);
+    window.addEventListener('popstate', this.popStateHandler);
     this.projectcards = this.configdata.projectcards;this.socialPlatformIcons = this.configdata.socialPlatformIcons;
     this.personalizedtags = this.configdata.tags;
     this.isloading = true;
@@ -163,6 +166,9 @@ export default {
     if (this.hashChangeHandler) {
       window.removeEventListener('hashchange', this.hashChangeHandler);
     }
+    if (this.popStateHandler) {
+      window.removeEventListener('popstate', this.popStateHandler);
+    }
   },
 
   watch:{
@@ -208,12 +214,14 @@ export default {
       this.activePage = page;
       this.dialog1 = false;
       this.dialog2 = false;
-      const nextHash = page === 'blog' ? '#blog' : '';
-      history.replaceState(null, '', `${window.location.pathname}${window.location.search}${nextHash}`);
+      const nextPath = page === 'blog' ? '/blog' : '/';
+      history.replaceState(null, '', `${nextPath}${window.location.search}`);
     },
 
-    syncActivePageFromHash() {
-      this.activePage = window.location.hash === '#blog' ? 'blog' : 'home';
+    syncActivePageFromLocation() {
+      const isBlogPath = /^\/blog(\/|$)/.test(window.location.pathname);
+      const isBlogHash = window.location.hash === '#blog';
+      this.activePage = isBlogPath || isBlogHash ? 'blog' : 'home';
       this.dialog1 = false;
       this.dialog2 = false;
     },

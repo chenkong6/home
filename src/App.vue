@@ -1,6 +1,6 @@
 <template>
-  <v-app class="vapp-fullscreen-background" style="overflow: hidden;" :class="{ 'radius-before': !xs }"
-  :style="xs?{height: '100%',width: '100%',top: '0',left:'0'}:(sm?{height: '98%',width: '98%',top: '1%',left:' 1%'}:{height: '96.6%',width: '99%',top: '1.7%',left:' 0.5%'})">
+  <v-app class="vapp-fullscreen-background" :class="{ 'radius-before': !xs }"
+  :style="xs?{height: '100%',width: '100%',top: '0',left:'0',overflow: activePage === 'blog' ? 'auto' : 'hidden'}:(sm?{height: '98%',width: '98%',top: '1%',left:' 1%',overflow: activePage === 'blog' ? 'auto' : 'hidden'}:{height: '96.6%',width: '99%',top: '1.7%',left:' 0.5%',overflow: activePage === 'blog' ? 'auto' : 'hidden'})">
     <div style="position: fixed;top: 1rem;right: 1rem;z-index: 40;display: flex;gap: 0.5rem;">
       <v-btn size="small" color="var(--leleo-vcard-color)" :variant="activePage === 'home' ? 'elevated' : 'tonal'" @click="setActivePage('home')">
         首页
@@ -134,7 +134,7 @@
         </v-row>
     </div>
 
-      <div v-show="activePage === 'blog'" style="position: relative;z-index: 2;height: 100%;width: 100%;overflow: hidden;">
+      <div v-show="activePage === 'blog'" style="position: relative;z-index: 2;height: 100%;width: 100%;overflow-y: auto;overflow-x: hidden;">
         <blog-view :configdata="configdata" @go-home="setActivePage('home')"></blog-view>
       </div>
 

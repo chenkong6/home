@@ -1,21 +1,15 @@
-<template>
+﻿<template>
   <div class="blog-shell">
     <v-container fluid class="blog-page">
-      <section class="blog-hero">
+      <section v-if="!isPostView" class="blog-hero">
         <div class="blog-hero__copy">
           <div class="blog-eyebrow">Blog / R2 / Search</div>
           <h1>{{ blogTitle }}</h1>
           <p>{{ blogSubtitle }}</p>
           <div class="blog-hero__actions">
-            <v-btn color="var(--leleo-vcard-color)" variant="elevated" @click="$emit('go-home')">
-              返回首页
-            </v-btn>
-            <v-btn variant="tonal" color="var(--leleo-vcard-color)" @click="openEditor()">
-              写文章
-            </v-btn>
-            <v-btn variant="tonal" color="var(--leleo-vcard-color)" @click="openAuthDialog()">
-              管理员
-            </v-btn>
+            <v-btn color="var(--leleo-vcard-color)" variant="elevated" @click="$emit('go-home')">返回首页</v-btn>
+            <v-btn variant="tonal" color="var(--leleo-vcard-color)" @click="openEditor()">写文章</v-btn>
+            <v-btn variant="tonal" color="var(--leleo-vcard-color)" @click="openAuthDialog()">管理员</v-btn>
           </div>
         </div>
 
@@ -35,7 +29,7 @@
         </div>
       </section>
 
-      <v-card class="blog-toolbar" rounded="xl" variant="tonal">
+      <v-card v-if="!isPostView" class="blog-toolbar" rounded="xl" variant="tonal">
         <div class="blog-toolbar__row">
           <v-text-field
             v-model="searchQuery"
@@ -58,18 +52,11 @@
             hide-details
           />
 
-          <v-btn color="var(--leleo-vcard-color)" variant="elevated" @click="openEditor()">
-            新建文章
-          </v-btn>
+          <v-btn color="var(--leleo-vcard-color)" variant="elevated" @click="openEditor()">新建文章</v-btn>
         </div>
 
         <v-chip-group v-model="selectedCategory" mandatory class="blog-toolbar__chips">
-          <v-chip
-            v-for="category in categoryOptions"
-            :key="category"
-            :value="category"
-            variant="tonal"
-          >
+          <v-chip v-for="category in categoryOptions" :key="category" :value="category" variant="tonal">
             {{ category }}
           </v-chip>
         </v-chip-group>
@@ -84,96 +71,90 @@
         <div>{{ errorMessage }}</div>
       </div>
 
-      <v-row class="blog-grid">
-        <v-col
-          v-for="post in filteredPosts"
-          :key="post.slug"
-          cols="12"
-          md="6"
-          xl="4"
-        >
-          <v-card class="blog-post-card" rounded="xl" variant="tonal" @click="openDetail(post.slug)">
-            <v-img
-              :src="post.cover || defaultCover"
-              height="220"
-              cover
-              class="blog-post-card__cover"
-            />
-            <v-card-text class="blog-post-card__content">
-              <div class="blog-post-card__meta">
-                <v-chip size="small" variant="flat" color="rgba(255,255,255,0.18)">
-                  {{ post.category || '未分类' }}
-                </v-chip>
-                <v-chip
-                  v-if="post.status === 'draft'"
-                  size="small"
-                  variant="flat"
-                  color="rgba(255,160,90,0.22)"
-                >
-                  草稿
-                </v-chip>
-              </div>
+      <template v-if="!loading && !isPostView">
+        <v-row class="blog-grid">
+          <v-col v-for="post in filteredPosts" :key="post.slug" cols="12" md="6" xl="4">
+            <v-card
+              class="blog-post-card"
+              rounded="xl"
+              variant="tonal"
+              role="link"
+              tabindex="0"
+              @click="openPostInNewTab(post.slug)"
+              @keydown.enter.prevent="openPostInNewTab(post.slug)"
+              @keydown.space.prevent="openPostInNewTab(post.slug)"
+            >
+              <v-img :src="post.cover || defaultCover" height="220" cover class="blog-post-card__cover" />
+              <v-card-text class="blog-post-card__content">
+                <div class="blog-post-card__meta">
+                  <v-chip size="small" variant="flat" color="rgba(255,255,255,0.18)">{{ post.category || '未分类' }}</v-chip>
+                  <v-chip v-if="post.status === 'draft'" size="small" variant="flat" color="rgba(255,160,90,0.22)">草稿</v-chip>
+                </div>
 
-              <h2>{{ post.title }}</h2>
-              <p>{{ post.summary || post.excerpt || '暂无摘要' }}</p>
+                <h2>{{ post.title }}</h2>
+                <p>{{ post.summary || post.excerpt || '暂无摘要' }}</p>
 
-              <div class="blog-post-card__footer">
-                <span>{{ formatDate(post.publishedAt) }}</span>
-                <span>{{ post.readTime || 1 }} 分钟</span>
-              </div>
+                <div class="blog-post-card__footer">
+                  <span>{{ formatDate(post.publishedAt) }}</span>
+                  <span>{{ post.readTime || 1 }} 分钟</span>
+                </div>
 
-              <div class="blog-post-card__tags">
-                <v-chip
-                  v-for="tag in post.tags || []"
-                  :key="`${post.slug}-${tag}`"
-                  size="small"
-                  variant="tonal"
-                >
-                  {{ tag }}
-                </v-chip>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
+                <div class="blog-post-card__tags">
+                  <v-chip v-for="tag in post.tags || []" :key="`${post.slug}-${tag}`" size="small" variant="tonal">{{ tag }}</v-chip>
+                </div>
 
-      <div v-if="!loading && !filteredPosts.length" class="blog-empty-state">
-        <v-icon size="40">mdi-text-search</v-icon>
-        <div>没有找到匹配的文章</div>
-      </div>
+                <div class="blog-post-card__actions">
+                  <v-btn size="small" variant="tonal" @click.stop="goToPost(post.slug)">当前页打开</v-btn>
+                  <v-btn size="small" variant="text" @click.stop="copyPostLink(post.slug)">复制链接</v-btn>
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
+
+        <div v-if="!filteredPosts.length" class="blog-empty-state">
+          <v-icon size="40">mdi-text-search</v-icon>
+          <div>没有找到匹配的文章</div>
+        </div>
+      </template>
+
+      <section v-if="!loading && isPostView" class="blog-article-page">
+        <v-card rounded="xl" variant="tonal" class="blog-article-panel">
+          <div class="blog-article-page__topbar">
+            <div class="blog-article-page__left">
+              <v-btn variant="tonal" @click="goToList">返回博客列表</v-btn>
+              <a class="blog-link" :href="currentPostUrl" target="_blank" rel="noreferrer">{{ currentPostUrl }}</a>
+            </div>
+            <div class="blog-article-page__right">
+              <v-btn variant="tonal" @click="copyCurrentPageLink">分享（复制链接）</v-btn>
+              <v-btn variant="tonal" @click="startEdit(currentPost)">编辑</v-btn>
+            </div>
+          </div>
+
+          <div v-if="isPostLoading" class="blog-loading">
+            <v-progress-circular indeterminate color="var(--leleo-vcard-color)"></v-progress-circular>
+          </div>
+
+          <div v-else-if="!currentPost" class="blog-empty-state">
+            <v-icon size="40">mdi-file-alert</v-icon>
+            <div>文章不存在或无权限访问</div>
+          </div>
+
+          <div v-else class="blog-article">
+            <h1 class="blog-article-title">{{ currentPost.title }}</h1>
+            <div class="blog-article__meta">
+              <v-chip variant="tonal">{{ currentPost.category || '未分类' }}</v-chip>
+              <span>{{ formatDate(currentPost.publishedAt) }}</span>
+              <span>{{ currentPost.readTime || 1 }} 分钟阅读</span>
+            </div>
+            <div class="blog-article__tags">
+              <v-chip v-for="tag in currentPost.tags || []" :key="`${currentPost.slug}-${tag}-detail`" size="small" variant="tonal">{{ tag }}</v-chip>
+            </div>
+            <div class="blog-article__content markdown-body" v-html="renderContent(currentPost.content)"></div>
+          </div>
+        </v-card>
+      </section>
     </v-container>
-
-    <v-dialog v-model="detailDialog" max-width="980">
-      <v-card class="blog-dialog" rounded="xl">
-        <v-card-title class="blog-dialog__header">
-          <div>
-            <div class="blog-dialog__eyebrow">文章详情</div>
-            <h3>{{ detailPost?.title }}</h3>
-          </div>
-
-          <div class="blog-dialog__actions">
-            <v-btn variant="tonal" @click="startEdit(detailPost)">编辑</v-btn>
-            <v-btn variant="text" @click="detailDialog = false">关闭</v-btn>
-          </div>
-        </v-card-title>
-
-        <v-card-text v-if="detailPost" class="blog-article">
-          <div class="blog-article__meta">
-            <v-chip variant="tonal">{{ detailPost.category || '未分类' }}</v-chip>
-            <span>{{ formatDate(detailPost.publishedAt) }}</span>
-            <span>{{ detailPost.readTime || 1 }} 分钟阅读</span>
-          </div>
-
-          <div class="blog-article__tags">
-            <v-chip v-for="tag in detailPost.tags || []" :key="`${detailPost.slug}-${tag}-detail`" size="small" variant="tonal">
-              {{ tag }}
-            </v-chip>
-          </div>
-
-          <div class="blog-article__content markdown-body" v-html="renderContent(detailPost.content)"></div>
-        </v-card-text>
-      </v-card>
-    </v-dialog>
 
     <v-dialog v-model="editorDialog" max-width="1100" scrollable>
       <v-card class="blog-dialog" rounded="xl">
@@ -192,7 +173,11 @@
           <v-row>
             <v-col cols="12" md="7">
               <v-text-field v-model="editorForm.title" label="标题" variant="outlined" class="mb-3" />
-              <v-text-field v-model="editorForm.slug" label="Slug" variant="outlined" class="mb-3" />
+              <v-text-field v-model="editorForm.slug" label="Slug（留空自动生成，可手动自定义）" variant="outlined" class="mb-2" />
+              <div class="editor-slug-actions">
+                <v-btn size="small" variant="tonal" @click="fillSlugByTitle">按标题自动生成 slug</v-btn>
+                <span class="editor-link-preview">链接预览：{{ getPreviewPostUrl() }}</span>
+              </div>
               <v-combobox
                 v-model="editorForm.category"
                 :items="categoryOptions.filter((item) => item !== '全部')"
@@ -230,16 +215,7 @@
 
               <v-text-field v-model="editorForm.publishedAt" type="datetime-local" label="发布时间" variant="outlined" class="mt-4" />
 
-              <v-btn
-                v-if="editorMode === 'edit'"
-                color="error"
-                variant="tonal"
-                class="mt-4"
-                :loading="deleting"
-                @click="deleteCurrentPost"
-              >
-                删除文章
-              </v-btn>
+              <v-btn v-if="editorMode === 'edit'" color="error" variant="tonal" class="mt-4" :loading="deleting" @click="deleteCurrentPost">删除文章</v-btn>
             </v-col>
           </v-row>
         </v-card-text>
@@ -248,20 +224,10 @@
 
     <v-dialog v-model="authDialog" max-width="560">
       <v-card class="blog-dialog" rounded="xl">
-        <v-card-title>
-          <h3>管理员口令</h3>
-        </v-card-title>
+        <v-card-title><h3>管理员口令</h3></v-card-title>
         <v-card-text>
-          <v-text-field
-            v-model="adminTokenInput"
-            label="BLOG_ADMIN_TOKEN"
-            type="password"
-            variant="outlined"
-            hide-details
-          />
-          <p class="blog-auth-tip">
-            如果 Cloudflare Pages 里配置了管理员口令，这里必须填写一致的值才能发布、编辑或删除文章。
-          </p>
+          <v-text-field v-model="adminTokenInput" label="BLOG_ADMIN_TOKEN" type="password" variant="outlined" hide-details />
+          <p class="blog-auth-tip">如果 Cloudflare 里配置了管理员口令，这里必须填写一致的值才能发布、编辑或删除文章。</p>
         </v-card-text>
         <v-card-actions class="justify-end">
           <v-btn variant="text" @click="authDialog = false">取消</v-btn>
@@ -270,9 +236,7 @@
       </v-card>
     </v-dialog>
 
-    <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="2400" rounded="pill">
-      {{ snackbar.text }}
-    </v-snackbar>
+    <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="2400" rounded="pill">{{ snackbar.text }}</v-snackbar>
   </div>
 </template>
 
@@ -329,8 +293,10 @@ export default {
         { title: '草稿', value: 'draft' },
         { title: '全部', value: 'all' },
       ],
-      detailDialog: false,
-      detailPost: null,
+      currentSlug: '',
+      currentPost: null,
+      isPostLoading: false,
+      popStateHandler: null,
       editorDialog: false,
       editorMode: 'create',
       editorForm: createEmptyPost(),
@@ -348,6 +314,15 @@ export default {
     }
   },
   computed: {
+    isPostView() {
+      return Boolean(this.currentSlug)
+    },
+    currentPostUrl() {
+      if (!this.currentSlug) {
+        return `${window.location.origin}/blog`
+      }
+      return this.buildPostUrl(this.currentSlug)
+    },
     categoryOptions() {
       return ['全部', ...this.categories]
     },
@@ -390,7 +365,7 @@ export default {
         .join('\n')
     },
   },
-  mounted() {
+  async mounted() {
     this.blogTitle = this.configdata?.blog?.title || this.blogTitle
     this.blogSubtitle = this.configdata?.blog?.subtitle || this.blogSubtitle
     this.defaultCover = this.configdata?.blog?.cover || this.defaultCover
@@ -400,11 +375,61 @@ export default {
       this.adminTokenInput = savedToken
     }
 
-    this.loadPosts()
+    this.popStateHandler = () => {
+      this.syncRouteFromLocation()
+    }
+    window.addEventListener('popstate', this.popStateHandler)
+
+    await this.loadPosts()
+    await this.syncRouteFromLocation()
+  },
+  beforeUnmount() {
+    if (this.popStateHandler) {
+      window.removeEventListener('popstate', this.popStateHandler)
+    }
   },
   methods: {
     renderContent(content) {
       return markdownToHtml(content || '')
+    },
+    makeSlugFromText(text = '') {
+      const value = String(text)
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9\u4e00-\u9fa5-]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '')
+
+      return value || ''
+    },
+    fillSlugByTitle() {
+      this.editorForm.slug = this.makeSlugFromText(this.editorForm.title)
+    },
+    getPreviewPostUrl() {
+      const slug = this.editorForm.slug?.trim() || this.makeSlugFromText(this.editorForm.title) || 'auto-generated'
+      return this.buildPostUrl(slug)
+    },
+    getPostPath(slug = '') {
+      if (!slug) {
+        return '/blog'
+      }
+      return `/blog/${encodeURIComponent(slug)}`
+    },
+    buildPostUrl(slug = '') {
+      return `${window.location.origin}${this.getPostPath(slug)}`
+    },
+    async syncRouteFromLocation() {
+      const match = window.location.pathname.match(/^\/blog\/([^/]+)$/)
+      if (!match) {
+        this.currentSlug = ''
+        this.currentPost = null
+        return
+      }
+
+      const slug = decodeURIComponent(match[1])
+      this.currentSlug = slug
+      await this.loadPostBySlug(slug)
     },
     formatDate(value) {
       if (!value) {
@@ -418,11 +443,7 @@ export default {
       }).format(new Date(value))
     },
     showMessage(text, color = 'var(--leleo-vcard-color)') {
-      this.snackbar = {
-        show: true,
-        text,
-        color,
-      }
+      this.snackbar = { show: true, text, color }
     },
     apiHeaders(extraHeaders = {}) {
       const headers = { ...extraHeaders }
@@ -436,9 +457,7 @@ export default {
       this.errorMessage = ''
 
       try {
-        const response = await fetch('/api/posts', {
-          headers: this.apiHeaders(),
-        })
+        const response = await fetch('/api/posts', { headers: this.apiHeaders() })
 
         if (!response.ok) {
           throw new Error('请求文章列表失败')
@@ -462,7 +481,9 @@ export default {
         this.loading = false
       }
     },
-    async openDetail(slug) {
+    async loadPostBySlug(slug) {
+      this.isPostLoading = true
+      this.currentPost = null
       try {
         const response = await fetch(`/api/posts/${encodeURIComponent(slug)}`, {
           headers: this.apiHeaders(),
@@ -473,21 +494,40 @@ export default {
         }
 
         const data = await response.json()
-        this.detailPost = data.post
-        this.detailDialog = true
+        this.currentPost = data.post
       } catch (error) {
         const fallback = this.posts.find((post) => post.slug === slug)
-        if (fallback) {
-          this.detailPost = fallback
-          this.detailDialog = true
-          return
-        }
-
-        this.showMessage('读取文章失败', 'error')
-        if (import.meta.env.DEV) {
-          console.error(error)
-        }
+        this.currentPost = fallback || null
+      } finally {
+        this.isPostLoading = false
       }
+    },
+    goToPost(slug) {
+      const path = this.getPostPath(slug)
+      history.pushState(null, '', path)
+      this.syncRouteFromLocation()
+    },
+    openPostInNewTab(slug) {
+      window.open(this.buildPostUrl(slug), '_blank', 'noopener')
+    },
+    copyPostLink(slug) {
+      navigator.clipboard.writeText(this.buildPostUrl(slug)).then(() => {
+        this.showMessage('文章链接已复制')
+      }).catch(() => {
+        this.showMessage('复制失败，请手动复制', 'warning')
+      })
+    },
+    copyCurrentPageLink() {
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        this.showMessage('当前页面链接已复制')
+      }).catch(() => {
+        this.showMessage('复制失败，请手动复制', 'warning')
+      })
+    },
+    goToList() {
+      history.pushState(null, '', '/blog')
+      this.currentSlug = ''
+      this.currentPost = null
     },
     openEditor(post = null) {
       if (!this.adminTokenInput.trim()) {
@@ -538,9 +578,6 @@ export default {
         this.editorDialog = true
       } catch (error) {
         this.showMessage('无法打开编辑器', 'error')
-        if (import.meta.env.DEV) {
-          console.error(error)
-        }
       }
     },
     async savePost() {
@@ -572,9 +609,7 @@ export default {
 
         const response = await fetch('/api/posts', {
           method: 'POST',
-          headers: this.apiHeaders({
-            'content-type': 'application/json',
-          }),
+          headers: this.apiHeaders({ 'content-type': 'application/json' }),
           body: JSON.stringify(payload),
         })
 
@@ -583,15 +618,16 @@ export default {
           throw new Error(errorData.message || '保存失败')
         }
 
+        const savedData = await response.json()
         this.showMessage('文章已保存')
         this.editorDialog = false
-        this.detailDialog = false
         await this.loadPosts()
+        const savedSlug = savedData?.post?.slug || this.editorForm.slug || this.originalSlug
+        if (savedSlug) {
+          this.goToPost(savedSlug)
+        }
       } catch (error) {
         this.showMessage(error.message || '保存失败', 'error')
-        if (import.meta.env.DEV) {
-          console.error(error)
-        }
       } finally {
         this.saving = false
       }
@@ -619,13 +655,10 @@ export default {
 
         this.showMessage('文章已删除')
         this.editorDialog = false
-        this.detailDialog = false
         await this.loadPosts()
+        this.goToList()
       } catch (error) {
         this.showMessage(error.message || '删除失败', 'error')
-        if (import.meta.env.DEV) {
-          console.error(error)
-        }
       } finally {
         this.deleting = false
       }
@@ -651,9 +684,13 @@ export default {
 
 <style scoped>
 .blog-shell {
-  min-height: 100vh;
+  min-height: 100%;
+  height: 100%;
   padding: 1.25rem;
   overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
   background:
     radial-gradient(circle at top left, rgba(255, 203, 142, 0.22), transparent 30%),
     radial-gradient(circle at top right, rgba(120, 184, 255, 0.18), transparent 24%),
@@ -677,7 +714,8 @@ export default {
 .blog-toolbar,
 .blog-dialog,
 .blog-post-card,
-.blog-preview {
+.blog-preview,
+.blog-article-panel {
   backdrop-filter: blur(16px);
 }
 
@@ -766,8 +804,8 @@ export default {
 }
 
 .blog-post-card {
-  cursor: pointer;
   overflow: hidden;
+  cursor: pointer;
   border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.06);
@@ -817,6 +855,13 @@ export default {
   margin-top: 0.8rem;
 }
 
+.blog-post-card__actions {
+  margin-top: 0.9rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .blog-loading,
 .blog-empty-state {
   display: grid;
@@ -829,7 +874,8 @@ export default {
   background: rgba(255, 255, 255, 0.05);
 }
 
-.blog-dialog {
+.blog-dialog,
+.blog-article-panel {
   border-radius: 28px;
   background: rgba(14, 18, 31, 0.92);
   color: rgba(255, 255, 255, 0.94);
@@ -851,6 +897,48 @@ export default {
 .blog-dialog__actions {
   display: flex;
   gap: 0.6rem;
+}
+
+.blog-article-page {
+  margin-top: 0.5rem;
+}
+
+.blog-article-panel {
+  padding: 1.1rem;
+}
+
+.blog-article-page__topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.blog-article-page__left,
+.blog-article-page__right {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.blog-link {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.82rem;
+  text-decoration: none;
+  opacity: 0.85;
+}
+
+.blog-link:hover {
+  text-decoration: underline;
+}
+
+.blog-article-title {
+  margin: 0 0 0.8rem;
+  font-size: clamp(1.7rem, 4vw, 2.5rem);
+  line-height: 1.2;
 }
 
 .blog-article {
@@ -880,6 +968,19 @@ export default {
   gap: 0.5rem;
   margin: 0.7rem 0 1rem;
   opacity: 0.75;
+}
+
+.editor-slug-actions {
+  margin: -0.2rem 0 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.editor-link-preview {
+  font-size: 0.78rem;
+  opacity: 0.76;
+  word-break: break-all;
 }
 
 .blog-auth-tip {
@@ -946,6 +1047,18 @@ export default {
 
   .blog-dialog__actions {
     flex-wrap: wrap;
+  }
+
+  .blog-shell {
+    padding: 0.7rem;
+  }
+
+  .blog-article-panel {
+    padding: 0.8rem;
+  }
+
+  .blog-link {
+    font-size: 0.72rem;
   }
 }
 </style>
