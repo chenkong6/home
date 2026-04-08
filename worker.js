@@ -107,6 +107,17 @@ function getStaticFetcher(env) {
   if (env?.ASSETS && typeof env.ASSETS.fetch === 'function') {
     return (request) => env.ASSETS.fetch(request)
   }
+
+  // Some deploy modes expose the static fetcher under a non-default binding name.
+  for (const value of Object.values(env || {})) {
+    if (!value || value === env?.BLOG_BUCKET) {
+      continue
+    }
+    if (typeof value.fetch === 'function') {
+      return (request) => value.fetch(request)
+    }
+  }
+
   return null
 }
 
