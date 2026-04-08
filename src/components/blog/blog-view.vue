@@ -1034,6 +1034,18 @@ export default {
   white-space: pre;
 }
 
+.markdown-body :deep(a) {
+  color: #7cc4ff;
+  text-decoration: underline;
+  cursor: pointer;
+  pointer-events: auto;
+  word-break: break-word;
+}
+
+.markdown-body :deep(a:hover) {
+  opacity: 0.92;
+}
+
 @media (max-width: 960px) {
   .blog-hero,
   .blog-toolbar__row {

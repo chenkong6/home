@@ -7,6 +7,37 @@ function escapeHtml(text) {
     .replace(/'/g, '&#39;')
 }
 
+function safeLink(url) {
+  const raw = String(url || '').trim()
+  if (!raw) {
+    return ''
+  }
+
+  // Block dangerous schemes while allowing in-site anchors/paths and common protocols.
+  if (/^(javascript|data|vbscript):/i.test(raw)) {
+    return ''
+  }
+
+  if (/^(https?:|mailto:|tel:|\/|#)/i.test(raw)) {
+    return raw
+  }
+
+  // Treat bare domains/hosts as external links.
+  if (/^[\w.-]+\.[a-z]{2,}(\/|$)/i.test(raw)) {
+    return `https://${raw}`
+  }
+
+  return raw
+}
+
+function renderAnchor(label, href) {
+  const link = safeLink(href)
+  if (!link) {
+    return escapeHtml(label)
+  }
+  return `<a href="${escapeHtml(link)}" target="_blank" rel="noreferrer noopener">${escapeHtml(label)}</a>`
+}
+
 function renderInline(text) {
   const codePlaceholders = []
   let output = escapeHtml(text)
@@ -16,11 +47,16 @@ function renderInline(text) {
     return `@@CODE_${index}@@`
   })
 
-  output = output.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>')
+  output = output.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, href) => renderAnchor(label, href))
+  output = output.replace(/(^|\s)(https?:\/\/[^\s<]+|www\.[^\s<]+)/g, (match, prefix, href) => {
+    const cleanHref = String(href).replace(/[),.;:!?]+$/, '')
+    const tail = href.slice(cleanHref.length)
+    return `${prefix}${renderAnchor(cleanHref, cleanHref)}${tail}`
+  })
   output = output.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
   output = output.replace(/\*([^*]+)\*/g, '<em>$1</em>')
 
-  return output.replace(/@@CODE_(\d+)@@/g, (_, index) => `<code>${codePlaceholders[index]}</code>`)
+  return output.replace(/@@CODE_(\d+)@@/g, (_, index) => `<code>${escapeHtml(codePlaceholders[index])}</code>`)
 }
 
 function flushParagraph(buffer, html) {
