@@ -103,41 +103,59 @@ async function handlePostDelete(request, env, slug) {
   return json({ message: 'deleted' })
 }
 
+function getStaticFetcher(env) {
+  if (env?.ASSETS && typeof env.ASSETS.fetch === 'function') {
+    return (request) => env.ASSETS.fetch(request)
+  }
+  return (request) => fetch(request)
+}
+
 async function serveStaticAssets(request, env) {
-  const response = await env.ASSETS.fetch(request)
+  const staticFetch = getStaticFetcher(env)
+  const response = await staticFetch(request)
   if (response.status !== 404 || request.method !== 'GET') {
     return response
   }
 
   const url = new URL(request.url)
   url.pathname = '/index.html'
-  return env.ASSETS.fetch(new Request(url, request))
+  return staticFetch(new Request(url, request))
 }
 
 export default {
   async fetch(request, env, context) {
-    const url = new URL(request.url)
+    try {
+      const url = new URL(request.url)
 
-    if (url.pathname === '/api/posts' && request.method === 'GET') {
-      return handlePostsList(request, env, context)
-    }
-
-    if (url.pathname === '/api/posts' && request.method === 'POST') {
-      return handlePostsCreate(request, env, context)
-    }
-
-    const postDetailMatch = url.pathname.match(/^\/api\/posts\/([^/]+)$/)
-    if (postDetailMatch) {
-      const slug = decodeURIComponent(postDetailMatch[1])
-      if (request.method === 'GET') {
-        return handlePostDetail(request, env, slug)
+      if (url.pathname === '/api/posts' && request.method === 'GET') {
+        return handlePostsList(request, env, context)
       }
 
-      if (request.method === 'DELETE') {
-        return handlePostDelete(request, env, slug)
+      if (url.pathname === '/api/posts' && request.method === 'POST') {
+        return handlePostsCreate(request, env, context)
       }
-    }
 
-    return serveStaticAssets(request, env)
+      const postDetailMatch = url.pathname.match(/^\/api\/posts\/([^/]+)$/)
+      if (postDetailMatch) {
+        const slug = decodeURIComponent(postDetailMatch[1])
+        if (request.method === 'GET') {
+          return handlePostDetail(request, env, slug)
+        }
+
+        if (request.method === 'DELETE') {
+          return handlePostDelete(request, env, slug)
+        }
+      }
+
+      return serveStaticAssets(request, env)
+    } catch (error) {
+      return json(
+        {
+          message: 'Worker runtime error',
+          error: error?.message || 'unknown',
+        },
+        500,
+      )
+    }
   },
 }
