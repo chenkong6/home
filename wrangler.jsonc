@@ -1,6 +1,12 @@
 {
   "name": "homepage",
   "compatibility_date": "2025-10-10",
+  "r2_buckets": [
+    {
+      "binding": "BLOG_BUCKET",
+      "bucket_name": "homepage-blog"
+    }
+  ],
   "assets": {
     "directory": "./dist"
   }

@@ -3,6 +3,7 @@ import typewriter from './components/typewriter.vue';
 import tab1 from './components/tabs/tab1.vue';
 import tab2 from './components/tabs/tab2.vue';
 import tab3 from './components/tabs/tab3.vue';
+import blogView from './components/blog/blog-view.vue';
 import loader from './components/loader.vue';
 import polarchart from './components/polarchart.vue';
 import config from './config.js';
@@ -12,7 +13,7 @@ import { useDisplay } from 'vuetify'
 
 export default {
   components: {
-    tab1,tab2,tab3,loader,homeright,typewriter,polarchart
+    tab1,tab2,tab3,loader,homeright,typewriter,polarchart,blogView
   },
   setup() {
     const { xs,sm,md } = useDisplay();
@@ -39,6 +40,8 @@ export default {
       socialPlatformIcons: null,
       hoveredSocialIcon: null,
       isExpanded: false,
+      activePage: 'home',
+      hashChangeHandler: null,
       stackicons:[
         {icon:"mdi-vuejs",color:"green", model: false,tip: 'vue'},
         {icon:"mdi-language-javascript",color:"#CAD300", model: false,tip: 'javascript'},
@@ -75,6 +78,9 @@ export default {
     if(import.meta.env.VITE_CONFIG){
       this.configdata = JSON.parse(import.meta.env.VITE_CONFIG);
     }
+    this.syncActivePageFromHash();
+    this.hashChangeHandler = () => this.syncActivePageFromHash();
+    window.addEventListener('hashchange', this.hashChangeHandler);
     this.projectcards = this.configdata.projectcards;this.socialPlatformIcons = this.configdata.socialPlatformIcons;
     this.personalizedtags = this.configdata.tags;
     this.isloading = true;
@@ -153,6 +159,12 @@ export default {
     this.$refs.audioPlayer.removeEventListener('ended',  this.nextTrack);
   },
 
+  beforeUnmount() {
+    if (this.hashChangeHandler) {
+      window.removeEventListener('hashchange', this.hashChangeHandler);
+    }
+  },
+
   watch:{
     isClearScreen(val){
       if(!this.videosrc){
@@ -191,6 +203,20 @@ export default {
   
   methods: {
     getCookie,setMeta,getFormattedTime,getFormattedDate,dataConsole,
+
+    setActivePage(page) {
+      this.activePage = page;
+      this.dialog1 = false;
+      this.dialog2 = false;
+      const nextHash = page === 'blog' ? '#blog' : '';
+      history.replaceState(null, '', `${window.location.pathname}${window.location.search}${nextHash}`);
+    },
+
+    syncActivePageFromHash() {
+      this.activePage = window.location.hash === '#blog' ? 'blog' : 'home';
+      this.dialog1 = false;
+      this.dialog2 = false;
+    },
 
     setMainProperty(imageurl){
       const root = document.documentElement;

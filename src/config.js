@@ -155,6 +155,12 @@ const config = {
 		{ go: "🔍 前往", img: "/img/sunshine.jpg", title: "Project 8", subtitle: "8,000 miles of wonder", text: "If you see this line, I've managed to get your attention.", url: "https://ckong.top", show: false },
 	],
 
+	blog: {
+		title: '辰空的博客',
+		subtitle: '文章、分类、搜索与 Cloudflare R2 存储。',
+		cover: '/img/sunshine.jpg',
+	},
+
 	statement: ["Copyright © 2025 ckong.com. All rights reserved."] // 备案信息和版权声明,
 }
 

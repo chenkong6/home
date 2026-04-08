@@ -1,6 +1,15 @@
 <template>
   <v-app class="vapp-fullscreen-background" style="overflow: hidden;" :class="{ 'radius-before': !xs }"
   :style="xs?{height: '100%',width: '100%',top: '0',left:'0'}:(sm?{height: '98%',width: '98%',top: '1%',left:' 1%'}:{height: '96.6%',width: '99%',top: '1.7%',left:' 0.5%'})">
+    <div style="position: fixed;top: 1rem;right: 1rem;z-index: 40;display: flex;gap: 0.5rem;">
+      <v-btn size="small" color="var(--leleo-vcard-color)" :variant="activePage === 'home' ? 'elevated' : 'tonal'" @click="setActivePage('home')">
+        首页
+      </v-btn>
+      <v-btn size="small" color="var(--leleo-vcard-color)" :variant="activePage === 'blog' ? 'elevated' : 'tonal'" @click="setActivePage('blog')">
+        博客
+      </v-btn>
+    </div>
+
     <transition name="fade">
       <div class="loading" v-show="isloading">
         <loader></loader>
@@ -23,7 +32,7 @@
       ></v-switch>
     </div>
     
-    <div v-show="!isloading && !isClearScreen" :style="xs||sm?{'overflow-y': 'auto','overflow-x': 'hidden'}:{}">
+    <div v-show="activePage === 'home' && !isloading && !isClearScreen" :style="xs||sm?{'overflow-y': 'auto','overflow-x': 'hidden'}:{}">
         <v-row>
             <v-col cols="12" md="4" lg="3" class="leleo-left" align="center">
               <div :style="xs||sm?{'font-size':'2.3rem'}:{'display':'none'}" class="leleo-left-welcome">{{ configdata.welcometitle }}</div>  
@@ -124,6 +133,10 @@
             </v-col>
         </v-row>
     </div>
+
+      <div v-show="activePage === 'blog'" style="position: relative;z-index: 2;height: 100%;width: 100%;overflow: hidden;">
+        <blog-view :configdata="configdata" @go-home="setActivePage('home')"></blog-view>
+      </div>
 
     <v-dialog
         v-model="dialog1"
