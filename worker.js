@@ -7,11 +7,48 @@ import {
   json,
   loadIndexEntries,
   saveIndexEntries,
+  slugify,
   sortEntries,
   toFullPost,
   toIndexEntry,
   writeStoredPost,
 } from './functions/_blog.js'
+
+const MEDIA_PREFIX = 'blog/media/'
+
+function nowIso() {
+  return new Date().toISOString()
+}
+
+function inferMediaExtension(fileName = '', contentType = '') {
+  const lowerName = String(fileName).toLowerCase()
+  if (lowerName.endsWith('.png')) return '.png'
+  if (lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg')) return '.jpg'
+  if (lowerName.endsWith('.webp')) return '.webp'
+  if (lowerName.endsWith('.gif')) return '.gif'
+  if (lowerName.endsWith('.avif')) return '.avif'
+  if (lowerName.endsWith('.svg')) return '.svg'
+
+  const mime = String(contentType || '').toLowerCase()
+  if (mime.includes('png')) return '.png'
+  if (mime.includes('jpeg') || mime.includes('jpg')) return '.jpg'
+  if (mime.includes('webp')) return '.webp'
+  if (mime.includes('gif')) return '.gif'
+  if (mime.includes('avif')) return '.avif'
+  if (mime.includes('svg')) return '.svg'
+
+  return '.bin'
+}
+
+function buildMediaKey(fileName = '', contentType = '') {
+  const baseName = String(fileName || 'image').replace(/\.[^.]+$/, '')
+  const safeName = slugify(baseName).slice(0, 48) || 'image'
+  const stamp = nowIso().replace(/[:.]/g, '-')
+  const uniqueId = globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2, 10)
+  const extension = inferMediaExtension(fileName, contentType)
+
+  return `${MEDIA_PREFIX}${stamp}-${uniqueId}-${safeName}${extension}`
+}
 
 async function readRequestBody(request) {
   const contentType = request.headers.get('content-type') || ''
@@ -103,6 +140,75 @@ async function handlePostDelete(request, env, slug) {
   return json({ message: 'deleted' })
 }
 
+async function handleMediaUpload(request, env) {
+  if (!isAuthorized(request, env)) {
+    return json({ message: 'Unauthorized' }, 401)
+  }
+
+  const formData = await request.formData()
+  const file = formData.get('file') || formData.get('cover') || formData.get('image')
+  if (!file || typeof file.arrayBuffer !== 'function') {
+    return json({ message: 'image file is required' }, 400)
+  }
+
+  const contentType = String(file.type || '')
+  if (!contentType.startsWith('image/')) {
+    return json({ message: 'Only image files are allowed' }, 400)
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    return json({ message: 'Image too large' }, 413)
+  }
+
+  const key = buildMediaKey(file.name || 'image', contentType)
+  await env.BLOG_BUCKET.put(key, await file.arrayBuffer(), {
+    httpMetadata: {
+      contentType,
+    },
+    customMetadata: {
+      originalName: file.name || '',
+      uploadedAt: nowIso(),
+    },
+  })
+
+  const responseUrl = new URL(request.url)
+  const rawUrl = new URL(responseUrl)
+  rawUrl.pathname = `/api/media/${encodeURIComponent(key)}`
+  rawUrl.hash = ''
+
+  const pageUrl = new URL(responseUrl)
+  pageUrl.pathname = '/'
+  pageUrl.hash = `#/blog/media/${encodeURIComponent(key)}`
+
+  return json({
+    key,
+    url: rawUrl.toString(),
+    pageUrl: pageUrl.toString(),
+    name: file.name || '',
+    size: file.size,
+    contentType,
+  })
+}
+
+async function handleMediaRequest(request, env, key) {
+  const stored = await env.BLOG_BUCKET.get(key)
+  if (!stored) {
+    return json({ message: 'Not found' }, 404)
+  }
+
+  const headers = new Headers()
+  headers.set('content-type', stored.httpMetadata?.contentType || 'application/octet-stream')
+  headers.set('cache-control', 'public, max-age=31536000, immutable')
+
+  const fileName = stored.customMetadata?.originalName || key.split('/').pop() || 'image'
+  headers.set('content-disposition', `inline; filename="${fileName.replace(/"/g, '')}"`)
+
+  return new Response(stored.body, {
+    status: 200,
+    headers,
+  })
+}
+
 function getStaticFetcher(env) {
   if (env?.ASSETS && typeof env.ASSETS.fetch === 'function') {
     return (request) => env.ASSETS.fetch(request)
@@ -153,6 +259,15 @@ export default {
 
       if (url.pathname === '/api/posts' && request.method === 'POST') {
         return handlePostsCreate(request, env, context)
+      }
+
+      if (url.pathname === '/api/uploads' && request.method === 'POST') {
+        return handleMediaUpload(request, env, context)
+      }
+
+      const mediaMatch = url.pathname.match(/^\/api\/media\/(.+)$/)
+      if (mediaMatch && request.method === 'GET') {
+        return handleMediaRequest(request, env, decodeURIComponent(mediaMatch[1]))
       }
 
       const postDetailMatch = url.pathname.match(/^\/api\/posts\/([^/]+)$/)

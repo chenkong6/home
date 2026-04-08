@@ -1,7 +1,7 @@
 ﻿<template>
   <div class="blog-shell">
     <v-container fluid class="blog-page">
-      <section v-if="!isPostView" class="blog-hero">
+      <section v-if="!isPostView && !isMediaView" class="blog-hero">
         <div class="blog-hero__copy">
           <div class="blog-eyebrow">Blog / R2 / Search</div>
           <h1>{{ blogTitle }}</h1>
@@ -29,7 +29,7 @@
         </div>
       </section>
 
-      <v-card v-if="!isPostView" class="blog-toolbar" rounded="xl" variant="tonal">
+      <v-card v-if="!isPostView && !isMediaView" class="blog-toolbar" rounded="xl" variant="tonal">
         <div class="blog-toolbar__row">
           <v-text-field
             v-model="searchQuery"
@@ -62,16 +62,16 @@
         </v-chip-group>
       </v-card>
 
-      <div v-if="loading" class="blog-loading">
+      <div v-if="loading && !isMediaView" class="blog-loading">
         <v-progress-circular indeterminate color="var(--leleo-vcard-color)"></v-progress-circular>
       </div>
 
-      <div v-if="errorMessage" class="blog-empty-state blog-empty-state--notice">
+      <div v-if="errorMessage && !isMediaView" class="blog-empty-state blog-empty-state--notice">
         <v-icon size="40">mdi-cloud-alert</v-icon>
         <div>{{ errorMessage }}</div>
       </div>
 
-      <template v-if="!loading && !isPostView">
+      <template v-if="!loading && !isPostView && !isMediaView">
         <v-row class="blog-grid">
           <v-col v-for="post in filteredPosts" :key="post.slug" cols="12" md="6" xl="4">
             <v-card
@@ -154,6 +154,40 @@
           </div>
         </v-card>
       </section>
+
+      <section v-if="!loading && isMediaView" class="blog-article-page">
+        <v-card rounded="xl" variant="tonal" class="blog-article-panel blog-media-panel">
+          <div class="blog-article-page__topbar">
+            <div class="blog-article-page__left">
+              <v-btn variant="tonal" @click="goToList">返回博客列表</v-btn>
+              <a class="blog-link" :href="currentMediaPageUrl" target="_blank" rel="noreferrer">{{ currentMediaPageUrl }}</a>
+            </div>
+            <div class="blog-article-page__right">
+              <v-btn variant="tonal" @click="copyCurrentPageLink">分享（复制链接）</v-btn>
+              <v-btn variant="tonal" @click="copyMediaRawLink(currentMediaKey)">复制原图地址</v-btn>
+            </div>
+          </div>
+
+          <div class="blog-media-view" v-if="currentMediaKey">
+            <div class="blog-media-view__frame">
+              <v-img :src="buildMediaRawUrl(currentMediaKey)" :alt="currentMediaKey" contain class="blog-media-view__image" />
+            </div>
+            <div class="blog-media-view__meta">
+              <div class="blog-media-view__label">R2 图片对象</div>
+              <div class="blog-media-view__key">{{ currentMediaKey }}</div>
+              <div class="blog-media-view__actions">
+                <v-btn variant="tonal" @click="copyMediaPageLink(currentMediaKey)">复制图片页链接</v-btn>
+                <v-btn variant="tonal" @click="copyMediaRawLink(currentMediaKey)">复制原图地址</v-btn>
+              </div>
+            </div>
+          </div>
+
+          <div v-else class="blog-empty-state">
+            <v-icon size="40">mdi-image-off</v-icon>
+            <div>图片不存在或无法访问</div>
+          </div>
+        </v-card>
+      </section>
     </v-container>
 
     <v-dialog v-model="editorDialog" max-width="1100" scrollable>
@@ -189,6 +223,20 @@
               />
               <v-text-field v-model="tagsInput" label="标签，逗号分隔" variant="outlined" class="mb-3" />
               <v-text-field v-model="editorForm.cover" label="封面地址" variant="outlined" class="mb-3" />
+              <v-file-input
+                label="上传封面图片"
+                accept="image/*"
+                prepend-icon="mdi-image-plus"
+                variant="outlined"
+                class="mb-3"
+                :loading="coverUploading"
+                @update:modelValue="handleCoverUpload"
+              />
+              <div v-if="editorForm.coverKey" class="editor-media-actions mb-3">
+                <v-btn size="small" variant="tonal" @click="copyMediaPageLink(editorForm.coverKey)">复制封面页链接</v-btn>
+                <v-btn size="small" variant="text" @click="copyMediaRawLink(editorForm.coverKey)">复制原图地址</v-btn>
+                <v-btn size="small" variant="text" @click="openMediaPage(editorForm.coverKey)">打开封面页</v-btn>
+              </div>
               <v-textarea v-model="editorForm.summary" label="摘要" rows="3" variant="outlined" class="mb-3" />
               <v-textarea v-model="editorForm.content" label="正文 Markdown" rows="14" variant="outlined" />
             </v-col>
@@ -258,6 +306,7 @@ function createEmptyPost() {
     tags: [],
     summary: '',
     cover: '/img/sunshine.jpg',
+    coverKey: '',
     content: '',
     status: 'published',
     publishedAt: timeValue,
@@ -294,6 +343,7 @@ export default {
         { title: '全部', value: 'all' },
       ],
       currentSlug: '',
+      currentMediaKey: '',
       currentPost: null,
       isPostLoading: false,
       popStateHandler: null,
@@ -302,6 +352,7 @@ export default {
       editorForm: createEmptyPost(),
       originalSlug: '',
       tagsInput: '',
+      coverUploading: false,
       saving: false,
       deleting: false,
       authDialog: false,
@@ -317,11 +368,17 @@ export default {
     isPostView() {
       return Boolean(this.currentSlug)
     },
+    isMediaView() {
+      return Boolean(this.currentMediaKey)
+    },
     currentPostUrl() {
       if (!this.currentSlug) {
         return `${window.location.origin}/blog`
       }
       return this.buildPostUrl(this.currentSlug)
+    },
+    currentMediaPageUrl() {
+      return this.buildMediaPageUrl(this.currentMediaKey)
     },
     categoryOptions() {
       return ['全部', ...this.categories]
@@ -419,18 +476,46 @@ export default {
     buildPostUrl(slug = '') {
       return `${window.location.origin}${this.getPostPath(slug)}`
     },
+    getMediaPath(key = '') {
+      if (!key) {
+        return '/#/blog'
+      }
+      return `/#/blog/media/${encodeURIComponent(key)}`
+    },
+    buildMediaPageUrl(key = '') {
+      return `${window.location.origin}${this.getMediaPath(key)}`
+    },
+    buildMediaRawUrl(key = '') {
+      if (!key) {
+        return ''
+      }
+      return `/api/media/${encodeURIComponent(key)}`
+    },
     async syncRouteFromLocation() {
       const pathMatch = window.location.pathname.match(/^\/blog\/([^/]+)\/?$/)
       const hashMatch = window.location.hash.match(/^#\/?blog\/([^/]+)\/?$/)
+      const mediaPathMatch = window.location.pathname.match(/^\/blog\/media\/([^/]+)\/?$/)
+      const mediaHashMatch = window.location.hash.match(/^#\/?blog\/media\/([^/]+)\/?$/)
+
+      const mediaMatch = mediaPathMatch || mediaHashMatch
+      if (mediaMatch) {
+        this.currentSlug = ''
+        this.currentPost = null
+        this.currentMediaKey = decodeURIComponent(mediaMatch[1])
+        return
+      }
+
       const match = pathMatch || hashMatch
 
       if (!match) {
         this.currentSlug = ''
         this.currentPost = null
+        this.currentMediaKey = ''
         return
       }
 
       const slug = decodeURIComponent(match[1])
+      this.currentMediaKey = ''
       this.currentSlug = slug
       await this.loadPostBySlug(slug)
     },
@@ -487,6 +572,7 @@ export default {
     async loadPostBySlug(slug) {
       this.isPostLoading = true
       this.currentPost = null
+      this.currentMediaKey = ''
       try {
         const response = await fetch(`/api/posts/${encodeURIComponent(slug)}`, {
           headers: this.apiHeaders(),
@@ -510,6 +596,12 @@ export default {
       history.pushState(null, '', `${window.location.pathname}${window.location.search}${hashPath}`)
       this.syncRouteFromLocation()
     },
+    openMediaPage(key) {
+      if (!key) {
+        return
+      }
+      window.open(this.buildMediaPageUrl(key), '_blank', 'noopener')
+    },
     openPostInNewTab(slug) {
       window.open(this.buildPostUrl(slug), '_blank', 'noopener')
     },
@@ -527,10 +619,70 @@ export default {
         this.showMessage('复制失败，请手动复制', 'warning')
       })
     },
+    copyMediaPageLink(key) {
+      const value = this.buildMediaPageUrl(key)
+      navigator.clipboard.writeText(value).then(() => {
+        this.showMessage('图片页链接已复制')
+      }).catch(() => {
+        this.showMessage('复制失败，请手动复制', 'warning')
+      })
+    },
+    copyMediaRawLink(key) {
+      const value = `${window.location.origin}${this.buildMediaRawUrl(key)}`
+      navigator.clipboard.writeText(value).then(() => {
+        this.showMessage('原图地址已复制')
+      }).catch(() => {
+        this.showMessage('复制失败，请手动复制', 'warning')
+      })
+    },
+    async handleCoverUpload(fileInput) {
+      const file = Array.isArray(fileInput) ? fileInput[0] : fileInput
+      if (!file) {
+        return
+      }
+
+      if (!String(file.type || '').startsWith('image/')) {
+        this.showMessage('请选择图片文件', 'warning')
+        return
+      }
+
+      const maxSize = 5 * 1024 * 1024
+      if (file.size > maxSize) {
+        this.showMessage('图片过大，请选择 5MB 以内图片', 'warning')
+        return
+      }
+
+      this.coverUploading = true
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+
+        const response = await fetch('/api/uploads', {
+          method: 'POST',
+          headers: this.apiHeaders(),
+          body: formData,
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          throw new Error(errorData.message || '封面上传失败')
+        }
+
+        const data = await response.json()
+        this.editorForm.cover = data.url || this.editorForm.cover
+        this.editorForm.coverKey = data.key || ''
+        this.showMessage('封面图片已上传到 R2')
+      } catch (error) {
+        this.showMessage(error.message || '封面上传失败，请重试', 'error')
+      } finally {
+        this.coverUploading = false
+      }
+    },
     goToList() {
       history.pushState(null, '', `${window.location.pathname}${window.location.search}#/blog`)
       this.currentSlug = ''
       this.currentPost = null
+      this.currentMediaKey = ''
     },
     openEditor(post = null) {
       if (!this.adminTokenInput.trim()) {
@@ -573,6 +725,7 @@ export default {
           tags: nextPost.tags || [],
           summary: nextPost.summary || '',
           cover: nextPost.cover || this.defaultCover,
+          coverKey: nextPost.coverKey || '',
           content: nextPost.content || '',
           status: nextPost.status || 'published',
           publishedAt: String(nextPost.publishedAt || new Date().toISOString()).slice(0, 16),
@@ -603,6 +756,7 @@ export default {
           ...this.editorForm,
           title,
           content,
+          coverKey: this.editorForm.coverKey || '',
           tags: this.tagsInput
             .split(/[，,\s]+/)
             .map((item) => item.trim())
@@ -927,6 +1081,61 @@ export default {
   align-items: center;
 }
 
+.blog-media-panel {
+  min-height: 520px;
+}
+
+.blog-media-view {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.7fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.blog-media-view__frame {
+  min-height: 460px;
+  padding: 0.8rem;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.blog-media-view__image {
+  min-height: 100%;
+  border-radius: 18px;
+}
+
+.blog-media-view__meta {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.8rem;
+  padding: 1rem;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.blog-media-view__label {
+  font-size: 0.78rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.68;
+}
+
+.blog-media-view__key {
+  word-break: break-all;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.blog-media-view__actions,
+.editor-media-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .blog-link {
   color: rgba(255, 255, 255, 0.85);
   font-size: 0.82rem;
@@ -1062,6 +1271,14 @@ export default {
 
   .blog-dialog__actions {
     flex-wrap: wrap;
+  }
+
+  .blog-media-view {
+    grid-template-columns: 1fr;
+  }
+
+  .blog-media-view__frame {
+    min-height: 320px;
   }
 
   .blog-shell {
