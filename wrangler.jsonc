@@ -1,5 +1,6 @@
 {
   "name": "homepage",
+  "main": "./worker.js",
   "compatibility_date": "2025-10-10",
   "r2_buckets": [
     {

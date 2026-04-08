@@ -8,7 +8,7 @@
 - [安装与运行](#安装与运行)
   - [本地运行](#本地运行)
   - [Vercel在线部署](#vercel在线部署)
-  - [CloudFlare Pages 在线部署](#cloudflare-pages-在线部署)
+  - [CloudFlare Worker 在线部署](#cloudflare-worker-在线部署)
 - [修改配置](#修改配置)
 
 
@@ -87,33 +87,22 @@ npm run dev
 
 注意：Vercel提供的`.vercel.app`域名在中国大陆地区可能无法访问，所以建议绑定自定义域名。（若没有自己的域名，这里提供简单的[免费二级域名服务](https://sds.leleo.top)及本项目如何进行域名绑定的[说明](./img/domainToVercel.md)）
 
-### CloudFlare Pages 在线部署
+### CloudFlare Worker 在线部署
 
-> 无需服务器，对站长友好(需要有CloudFlare以及Github账号)
+> 你现在看到的 `Set up your application` 页面就是 Worker Git 部署入口，这个仓库就是按这个入口来配置的。
 
-1. Fork本项目到自己的账号下
-   
-2. 登录CloudFlare并点击左侧栏目中"计算(workers)"底下的"Workers 和 Pages"
+1. 点击 `Continue with GitHub`，连接 GitHub 并选择当前仓库。
+2. 项目名称填 `home`。
+3. 构建命令填 `npm run build`。
+4. 部署命令填 `npx wrangler deploy`。
+5. 非生产分支部署命令可留空，或者填 `npx wrangler versions upload`。
+6. 路径填 `/`。
+7. 如果页面要求 `API 令牌`，可以先留空；如果你的 Cloudflare 配置强制要求填写，再创建一个带 Workers 和 R2 相关权限的 Token。
 
-![Workers页](./img/leleo-home-page/IMG_20250813_122124.jpg)
+部署完成后，到项目设置里继续配置 R2 绑定和环境变量。
 
-3. 点击右上角"创建"，选择"Pages"，点击"导入现有 Git 存储库"右侧的"开始使用"
-
-![创建页](./img/leleo-home-page/IMG_20250813_122156.jpg)
-
-4. 点击"连接 Github"，并登录你的 Github 账号
-
-5. 选择项目存储库(如果你没有更名那应该是"leleo-home-page")并开始设置，在接下来的页面中框架预设选择`Vue`(如果不选择，你的网站会访问为空白)，点击保存并部署
-
-![配置页](./img/leleo-home-page/IMG_20250813_122251.jpg)
-
-此时，项目已经部署完成，可以直接点击上方链接预览
-
-如果需要绑定域名，可以点击"添加自定义域"、"设置自定义域"并填入目标域，点击继续
-
-> 你的域名托管在CloudFlare，直接点击"激活域"就可以完成
-
-> 你的域名没有托管在CloudFlare，根据指引添加CNAME记录即可
+> R2 bucket 建议使用 `homepage-blog`。
+> 如果需要绑定域名，按 Cloudflare 页面上的提示操作即可。
 
 ## 修改配置
 
@@ -139,26 +128,26 @@ npm run dev
 ![Vercel控制面板](./img/leleo-home-page/1737626184576.png)
 ![Vercel控制面板](./img/leleo-home-page/1737626397809.png)
 
-#### CloudFlare部署
+#### CloudFlare Worker 部署
 
-> (1). 到你的Pages项目，点击"设置"，找到"变量和机密"点击右侧"添加"
+> (1). 到你的 Worker Git 部署项目，点击"设置"，找到"变量和机密"点击右侧"添加"
 ![设置页](./img/leleo-home-page/IMG_20250813_125718.jpg)
 
-> (2). 要求填入"变量名称"为`VITE_CONFIG`,"值"如[环境变量值](./img/env.md)所示，全部复制粘贴即可（有点多），根据个人情况自定义修改，配置说明同方法1
+> (2). 构建命令填 `npm run build`，部署命令填 `npx wrangler deploy`，路径填 `/`，如果页面要求 API 令牌就按 Cloudflare 提示创建后填写。
 
-> (3). 点击"部署"，找到左侧带绿条的那个点击右侧三个点"重试部署" 等待部署完成即可
+> (3). 部署完成后，重新部署一次，等待完成即可。
 ![重试部署](./img/leleo-home-page/IMG_20250813_131021.jpg)
 
 ### 博客和 R2 配置
 
-如果你要启用文章发布能力，需要在 Cloudflare Pages 里额外配置一个 R2 绑定和一个可选的管理员口令。
+如果你要启用文章发布能力，需要在 Cloudflare Worker 项目里额外配置一个 R2 绑定和一个可选的管理员口令。
 
-如果你后续要用外部 S3 客户端直连 R2，`。
-当前项目内置的博客接口仍然通过 Pages Functions 访问 R2 bucket 绑定，不需要手动填写这个地址。
+如果你后续要用外部 S3 客户端直连 R2，可以使用这个 S3 API：`https://097feb25db62df21d291254373e71243.r2.cloudflarestorage.com/homepage-blog`。
+当前项目内置的博客接口仍然通过 Worker 绑定访问 R2 bucket，不需要手动填写这个地址。
 
 1. 在 R2 控制台新建一个 bucket，名称建议与 [wrangler.jsonc](wrangler.jsonc) 保持一致。
-  bucket 名只能包含小写字母、数字和连字符，推荐使用类似 `homepage-blog` 这样的命名。
-2. 在 Pages 项目的环境变量里添加 `BLOG_ADMIN_TOKEN`，用于保护写入接口。
+   bucket 名只能包含小写字母、数字和连字符，推荐使用类似 `homepage-blog` 这样的命名。
+2. 在 Worker 项目的环境变量里添加 `BLOG_ADMIN_TOKEN`，用于保护写入接口。
 3. 重新部署后，博客页会通过 `/api/posts` 读取和保存文章。
 
 默认情况下，如果没有配置管理员口令，写入接口仍然可用；如果你要公开部署，建议一定配置口令。
