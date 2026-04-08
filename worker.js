@@ -107,11 +107,20 @@ function getStaticFetcher(env) {
   if (env?.ASSETS && typeof env.ASSETS.fetch === 'function') {
     return (request) => env.ASSETS.fetch(request)
   }
-  return (request) => fetch(request)
+  return null
 }
 
 async function serveStaticAssets(request, env) {
   const staticFetch = getStaticFetcher(env)
+  if (!staticFetch) {
+    return json(
+      {
+        message: 'ASSETS binding is missing',
+      },
+      500,
+    )
+  }
+
   const response = await staticFetch(request)
   if (response.status !== 404 || request.method !== 'GET') {
     return response
